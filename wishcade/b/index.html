@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>朋友分享的轉盤 — 宇宙小瑪莉 Wishcade</title>
+<meta property="og:title" content="一起來轉宇宙小瑪莉 ✦ Spin my Wishcade board">
+<meta property="og:description" content="朋友做了一個轉盤，點開就能一起轉。A friend made a board for you.">
+<style>
+:root{--bg:#0b0820;--card:#140f33;--text:#fff;--dim:#c9c3f0;--mute:#8a82c0;--gold:#ffd23f;--cyan:#5ef1ff;--pink:#ff5ec8;--red:#ff2d2d}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,"PingFang TC","Noto Sans TC",sans-serif;padding:32px 16px 60px;line-height:1.6}
+.c{max-width:480px;margin:0 auto}
+.brand{color:var(--gold);font-weight:800;font-size:14px;letter-spacing:.08em}
+.kicker{color:var(--cyan);font-size:13px;letter-spacing:.1em;margin-top:18px}
+h1{font-size:28px;font-weight:900;color:var(--gold);margin:4px 0 14px;word-break:break-word}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.slot{background:var(--card);border:2px solid #2d2560;border-radius:10px;padding:10px}
+.slot b{display:block;font-size:16px}
+.slot span{display:block;font-size:12px;color:var(--cyan);margin-top:2px;word-break:break-word}
+.btn{display:block;text-align:center;text-decoration:none;font-weight:800;font-size:18px;border-radius:40px;padding:16px;margin-top:22px;background:var(--red);color:#fff;border:3px solid #000;box-shadow:0 6px 0 #4a0000}
+.btn2{display:block;text-align:center;color:var(--gold);margin-top:16px;font-size:15px}
+.note{color:var(--mute);font-size:13px;margin-top:16px}
+.err{color:var(--dim);margin-top:20px}
+</style>
+</head>
+<body>
+<div class="c">
+  <div class="brand">宇宙小瑪莉 · WISHCADE</div>
+  <div id="app"></div>
+</div>
+<script>
+// 轉盤內容在網址 # 後面（base64url 的 UTF-8 JSON），只在這台裝置上解讀，不會送到任何伺服器。
+// 格式與 app 的 src/lib/customBoard.ts 相同：[1, 標題, 名稱1, 話1, …, 名稱8, 話8]
+(function () {
+  var code = (location.hash || '').slice(1);
+  var app = document.getElementById('app');
+  var zh = /^zh/i.test(navigator.language || '');
+  var T = zh
+    ? { kicker: '朋友分享的轉盤', open: '用宇宙小瑪莉打開', get: '還沒安裝？到 App Store 下載（免費）', note: '安裝後回到這個頁面，再按一次「打開」。', bad: '這個連結好像不完整，請朋友重新分享一次。' }
+    : { kicker: 'A board from a friend', open: 'Open in Wishcade', get: 'Don’t have it? Get it free on the App Store', note: 'After installing, come back to this page and tap Open again.', bad: 'This link looks incomplete. Ask your friend to share it again.' };
+  function decode(s) {
+    var map = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+    var bytes = [], buf = 0, bits = 0;
+    for (var i = 0; i < s.length; i++) {
+      var v = map.indexOf(s[i]); if (v < 0) throw 0;
+      buf = (buf << 6) | v; bits += 6;
+      if (bits >= 8) { bits -= 8; bytes.push((buf >> bits) & 255); }
+    }
+    var arr = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(new Uint8Array(bytes)));
+    if (!Array.isArray(arr) || arr[0] !== 1 || arr.length !== 18) throw 0;
+    return arr;
+  }
+  function esc(s) { var d = document.createElement('div'); d.textContent = String(s); return d.innerHTML; }
+  var arr;
+  try { arr = decode(code); } catch (e) { app.innerHTML = '<p class="err">' + T.bad + '</p>'; return; }
+  var deep = 'wishcade://b?c=' + code;
+  var html = '<div class="kicker">' + T.kicker + '</div><h1>' + esc(arr[1]) + '</h1><div class="grid">';
+  for (var i = 0; i < 8; i++) {
+    html += '<div class="slot"><b>' + esc(arr[2 + i * 2]) + '</b>' + (arr[3 + i * 2] ? '<span>' + esc(arr[3 + i * 2]) + '</span>' : '') + '</div>';
+  }
+  html += '</div><a class="btn" href="' + deep + '">' + T.open + '</a>';
+  html += '<a class="btn2" id="store" href="/wishcade/">' + T.get + '</a><p class="note">' + T.note + '</p>';
+  app.innerHTML = html;
+  // App Store 上架後把 APP_STORE_URL 換成正式連結
+  var APP_STORE_URL = '';
+  if (APP_STORE_URL) document.getElementById('store').href = APP_STORE_URL;
+  setTimeout(function () { location.href = deep; }, 400);
+})();
+</script>
+</body>
+</html>
